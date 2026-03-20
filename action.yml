@@ -1,0 +1,6 @@
+name: "Vibe Evaluator"
+description: "A GitHub Action that uploads your repository, triggers backend evaluation, and polls for progress until results are ready"
+
+runs:
+  using: "node24"
+  main: "dist/index.js"
