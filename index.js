@@ -3,8 +3,6 @@ import * as exec from "@actions/exec";
 import fs from "fs";
 import crypto from "crypto";
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
 async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -79,50 +77,6 @@ async function uploadToS3(presignedUrl, checksum) {
   core.info(`Upload complete (status: ${res.status})`);
 }
 
-async function pollStatus(backendUrl, payload) {
-  const startTime = Date.now();
-  const maxDuration = 20 * 60 * 1000; // 20 min
-  let existingCompletionProgress = -1;
-
-  while (Date.now() - startTime < maxDuration) {
-    const res = await fetchWithTimeout(
-      `${backendUrl}/notify-github-action-evaluation`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
-
-    let data;
-    try {
-      data = await res.json();
-    } catch {
-      throw new Error("Invalid JSON response from polling API");
-    }
-
-    const completionProgress = data.summary?.completion ?? 0;
-
-    if (
-      completionProgress !== existingCompletionProgress &&
-      completionProgress !== 0
-    ) {
-      core.info(`Progress: ${completionProgress}%`);
-      existingCompletionProgress = completionProgress;
-    }
-
-    if (completionProgress >= 100) {
-      return data;
-    }
-
-    await sleep(30000); // 30 sec
-  }
-
-  throw new Error("Timed out after 20 minutes");
-}
-
 async function main() {
   try {
     const backendUrl = "https://stageapi.vibecodearena.ai/api";
@@ -148,8 +102,6 @@ async function main() {
 
     core.info(`Repo Checksum: ${checksum}`);
 
-    core.info("Initiate Github Action ...");
-
     const initiateRes = await fetchWithTimeout(
       `${backendUrl}/github-action-evaluation`,
       {
@@ -172,14 +124,11 @@ async function main() {
       throw new Error("Invalid JSON response from initiate API");
     }
 
-    const { pre_signed_url, prompt_id, response_id, step } =
+    const { pre_signed_url, prompt_id, response_id } =
       initiateEvaluation;
 
     core.info(`Prompt Id: ${prompt_id}`);
     core.info(`Response Id: ${response_id}`);
-    core.notice(`The results can be accessed on our website once the evaluation is complete: https://stage.vibecodearena.ai/duel/${prompt_id}/${response_id}`);
-
-    const payload = { prompt_id, response_id, step };
 
     if (pre_signed_url) {
       await uploadToS3(pre_signed_url, checksum);
@@ -190,23 +139,8 @@ async function main() {
       );
     }
 
-    // Poll Backend to Obtain Evaluation Summar
-    const evaluationSummaryResponse = await pollStatus(
-      backendUrl,
-      payload
-    );
-
-    const summary = evaluationSummaryResponse.summary || {};
-
-    core.notice("Completed successfully");
-    core.info(`Overall Score: ${summary.overall_score ?? 0.0}`);
-    core.info(
-      `Evaluation Summary: ${JSON.stringify(
-        summary.evaluations ?? {},
-        null,
-        2
-      )}`
-    );
+    core.notice(`The results can be accessed on our website once the evaluation is complete: https://stage.vibecodearena.ai/duel/${prompt_id}/${response_id}`);
+    core.info('It takes about an hour to complete the Evaluation');
   } catch (error) {
     core.error(error.message);
   }
