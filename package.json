@@ -1,7 +1,7 @@
 {
   "name": "vibe-evaluator",
   "version": "1.0.0",
-  "description": "GitHub Action that uploads your repository, triggers backend evaluation, and polls for progress until results are ready",
+  "description": "GitHub Action that uploads your repository and triggers backend evaluation for results on the Vibe Code Arena website",
   "main": "index.js",
   "scripts": {
     "build": "esbuild index.js --bundle --platform=node --target=node24 --outfile=dist/index.js --minify",

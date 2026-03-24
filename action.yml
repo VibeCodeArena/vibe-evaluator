@@ -1,5 +1,11 @@
 name: "Vibe Evaluator"
-description: "A GitHub Action that uploads your repository, triggers backend evaluation, and polls for progress until results are ready"
+description: "A GitHub Action that uploads your repository and triggers backend evaluation for results on the Vibe Code Arena website"
+
+inputs:
+  isPrivate:
+    description: "Set to true to make the code private in Vibe Code Arena. Always private for private repositories."
+    required: false
+    default: "false"
 
 runs:
   using: "node24"

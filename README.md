@@ -6,18 +6,25 @@
 
 A reusable GitHub Action that:
 - Uploads your repository to a backend
-- Triggers evaluation
-- Polls for progress
-- Returns a final summary
-- Works with **private and public repositories**
+- Triggers the evaluation process
+- Provides a direct link to the results on the **Vibe Code Arena website**
+- Works with both **private and public repositories**
 
 ---
 
-## Outputs
+## Inputs
 
-| Name     | Description                  |
-|----------|------------------------------|
-| summary  | JSON result from backend     |
+| Name      | Description                                                                 | Required | Default |
+|-----------|-----------------------------------------------------------------------------|----------|---------|
+| isPrivate | Set to true to make the code private in Vibe Code Arena. Always private for private repositories. | false    | "false" |
+
+---
+
+## Evaluation Results
+
+The evaluation process typically takes about **one hour** to complete. Once finished, you can access the detailed summary and results on our website.
+
+The GitHub Action will output a workflow notice containing a direct link to your evaluation results (e.g., `https://vibecodearena.ai/duel/PROMPT_ID/RESPONSE_ID`).
 
 ---
 
@@ -38,6 +45,8 @@ jobs:
 
       - name: Run Vibe Evaluator
         uses: VibeCodeArena/vibe-evaluator@v1
+        with:
+          isPrivate: "false"
 ```
 
 ## Maintainer Build Instructions

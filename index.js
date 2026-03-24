@@ -77,9 +77,36 @@ async function uploadToS3(presignedUrl, checksum) {
   core.info(`Upload complete (status: ${res.status})`);
 }
 
+function obtainGithubRepoVisibility() {
+  const event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+
+  const isRepoPrivate = event.repository?.private;
+
+  if (isRepoPrivate === undefined) {
+    core.warning("Could not determine repository visibility");
+  } else if (isRepoPrivate) {
+    core.info("Repository is PRIVATE");
+  } else {
+    core.info("Repository is PUBLIC");
+  }
+
+  return isRepoPrivate
+}
+
 async function main() {
   try {
     const backendUrl = "https://stageapi.vibecodearena.ai/api";
+
+    // Verify how the Vibe Code Arena would store the Code
+    let isVCACodePrivate = false;
+    const isPrivateInput = core.getInput("isPrivate") === "true";
+    const isRepoPrivate = obtainGithubRepoVisibility();
+    if(!isRepoPrivate) {
+      isVCACodePrivate = isPrivateInput
+    }
+    else {
+      isVCACodePrivate = true;
+    }
 
     const repoUrl =
       process.env.GITHUB_SERVER_URL +
@@ -113,6 +140,7 @@ async function main() {
           url: repoUrl,
           commit_id: commitId,
           checksum: checksum,
+          is_repo_private: isVCACodePrivate
         }),
       }
     );
@@ -139,10 +167,10 @@ async function main() {
       );
     }
 
-    core.notice(`The results can be accessed on our website once the evaluation is complete: https://stage.vibecodearena.ai/duel/${prompt_id}/${response_id}`);
+    core.notice(`The results can be accessed on our website once the evaluation is complete: https://vibecodearena.ai/duel/${prompt_id}/${response_id}`);
     core.info('It takes about an hour to complete the Evaluation');
   } catch (error) {
-    core.error(error.message);
+    core.setFailed(error.message);
   }
 }
 
